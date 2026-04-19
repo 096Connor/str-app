@@ -7,6 +7,7 @@ Fullstackowy klon Netflixa zbudowany w technologii JavaScript/TypeScript. Projek
 ## 🛠️ Technologie
 
 ### Frontend
+
 - **Next.js 15** — framework React z SSR/CSR
 - **React 19** — biblioteka UI
 - **TypeScript** — typowanie statyczne
@@ -16,6 +17,7 @@ Fullstackowy klon Netflixa zbudowany w technologii JavaScript/TypeScript. Projek
 - **cookies-next** — obsługa cookies (SSR)
 
 ### Backend
+
 - **NestJS** — framework Node.js
 - **Prisma 7** — ORM do bazy danych
 - **PostgreSQL** — relacyjna baza danych
@@ -24,6 +26,7 @@ Fullstackowy klon Netflixa zbudowany w technologii JavaScript/TypeScript. Projek
 - **Stripe** — integracja płatności
 
 ### Infrastruktura
+
 - **Docker** — konteneryzacja bazy danych
 - **Docker Compose** — orkiestracja kontenerów
 
@@ -78,6 +81,7 @@ str-app/
 ## 🚀 Uruchomienie projektu
 
 ### Wymagania
+
 - Node.js v22+
 - Docker Desktop
 - Stripe CLI — https://stripe.com/docs/stripe-cli (zakładka Windows)
@@ -103,25 +107,22 @@ cd backend
 
 Utwórz plik `backend/.env` z następującą zawartością:
 
-```env
+````env
 DATABASE_URL="postgresql://netflix:netflix@localhost:5432/netflix_db?schema=public"
 JWT_SECRET="your-super-secret-jwt-key-change-in-production"
 JWT_EXPIRES_IN="7d"
 PORT=3001
 NODE_ENV=development
-STRIPE_SECRET_KEY=sk_test_51TLSOEB63vT3f0zcHCELCoL4uDygXsfqyJBm2C5z8IEoih77D5bVAZ84l8voDRWY85ZBEuHijp1pvSpYs7Ymlhjs004FRaxbg4
-STRIPE_WEBHOOK_SECRET=whsec_WYGENERUJ_WŁASNY_PATRZ_NIŻEJ
-STRIPE_PRICE_ID=price_1TLSnVB63vT3f0zcMZnq4byO
-```
-
-> ⚠️ `STRIPE_WEBHOOK_SECRET` musisz wygenerować sam — patrz krok 5.
+STRIPE_SECRET_KEY=<skontaktuj sie z autorem projektu po klucz>
+STRIPE_WEBHOOK_SECRET=whsec_WYGENERUJ_WŁASNY_PATSTRIPE_SECRET_KEY=sk_test_51TLSOEB63vT3f0zcHCELCoL4uDygXsfqyJBm2C5z8IEoih77D5bVAZ84l8voDRWY85ZBEuHijp1pvSpYs7Ymlhjs004FRaxbg4
+️ `STRIPE_WEBHOOK_SECRET` musisz wygenerować sam — patrz krok 5.
 
 ```bash
 npm install
 npx prisma migrate dev
 npx prisma generate
 npm run start:dev
-```
+````
 
 ### 4. Konfiguracja frontendu
 
@@ -146,26 +147,29 @@ Webhooks są potrzebne do aktywacji subskrypcji po płatności.
 
 1. Pobierz Stripe CLI ze https://stripe.com/docs/stripe-cli (zakładka Windows)
 2. Wypakuj i uruchom w nowym terminalu:
+
 ```bash
 stripe login
 stripe listen --forward-to http://localhost:3001/payments/webhook
 ```
+
 3. Skopiuj wyświetlony `whsec_...` i wklej do `backend/.env` jako `STRIPE_WEBHOOK_SECRET`
 4. Zrestartuj backend
 
 ### Adresy po uruchomieniu
 
-| Serwis | Adres |
-|--------|-------|
-| Frontend | http://localhost:3000 |
+| Serwis      | Adres                 |
+| ----------- | --------------------- |
+| Frontend    | http://localhost:3000 |
 | Backend API | http://localhost:3001 |
-| Baza danych | localhost:5432 |
+| Baza danych | localhost:5432        |
 
 ---
 
 ## 💳 Testowanie płatności
 
 Użyj karty testowej Stripe (nie pobiera prawdziwych pieniędzy):
+
 - **Numer:** `4242 4242 4242 4242`
 - **Data:** dowolna przyszła (np. `12/28`)
 - **CVC:** dowolne 3 cyfry (np. `123`)
@@ -175,11 +179,11 @@ Użyj karty testowej Stripe (nie pobiera prawdziwych pieniędzy):
 
 ## 🗄️ Schemat bazy danych
 
-| Tabela | Opis |
-|--------|------|
-| `users` | Użytkownicy z danymi subskrypcji |
-| `movies` | Filmy z flagą `isPremium` |
-| `watchlist` | Lista ulubionych filmów |
+| Tabela          | Opis                                   |
+| --------------- | -------------------------------------- |
+| `users`         | Użytkownicy z danymi subskrypcji       |
+| `movies`        | Filmy z flagą `isPremium`              |
+| `watchlist`     | Lista ulubionych filmów                |
 | `watch_history` | Historia oglądania z flagą `completed` |
 
 ---
@@ -187,42 +191,47 @@ Użyj karty testowej Stripe (nie pobiera prawdziwych pieniędzy):
 ## 📡 API Endpoints
 
 ### Auth
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| POST | `/auth/register` | Rejestracja |
-| POST | `/auth/login` | Logowanie |
-| GET | `/auth/me` | Profil użytkownika |
+
+| Metoda | Endpoint         | Opis               |
+| ------ | ---------------- | ------------------ |
+| POST   | `/auth/register` | Rejestracja        |
+| POST   | `/auth/login`    | Logowanie          |
+| GET    | `/auth/me`       | Profil użytkownika |
 
 ### Movies
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| GET | `/movies` | Lista filmów |
-| GET | `/movies/:id` | Szczegóły filmu |
-| GET | `/movies/recommendations` | Rekomendacje |
-| GET | `/movies/seed` | Seedowanie przykładowych filmów |
+
+| Metoda | Endpoint                  | Opis                            |
+| ------ | ------------------------- | ------------------------------- |
+| GET    | `/movies`                 | Lista filmów                    |
+| GET    | `/movies/:id`             | Szczegóły filmu                 |
+| GET    | `/movies/recommendations` | Rekomendacje                    |
+| GET    | `/movies/seed`            | Seedowanie przykładowych filmów |
 
 ### Watchlist
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| GET | `/watchlist` | Pobierz listę |
-| POST | `/watchlist` | Dodaj film |
-| DELETE | `/watchlist/:movieId` | Usuń film |
+
+| Metoda | Endpoint              | Opis          |
+| ------ | --------------------- | ------------- |
+| GET    | `/watchlist`          | Pobierz listę |
+| POST   | `/watchlist`          | Dodaj film    |
+| DELETE | `/watchlist/:movieId` | Usuń film     |
 
 ### History
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| GET | `/history` | Historia oglądania |
-| GET | `/history/completed` | Obejrzane filmy |
-| POST | `/history` | Dodaj do historii |
-| PATCH | `/history/:movieId/complete` | Oznacz jako obejrzany |
-| DELETE | `/history` | Wyczyść historię |
+
+| Metoda | Endpoint                     | Opis                  |
+| ------ | ---------------------------- | --------------------- |
+| GET    | `/history`                   | Historia oglądania    |
+| GET    | `/history/completed`         | Obejrzane filmy       |
+| POST   | `/history`                   | Dodaj do historii     |
+| PATCH  | `/history/:movieId/complete` | Oznacz jako obejrzany |
+| DELETE | `/history`                   | Wyczyść historię      |
 
 ### Payments
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| POST | `/payments/checkout` | Utwórz sesję płatności Stripe |
-| GET | `/payments/status` | Status subskrypcji |
-| POST | `/payments/webhook` | Webhook Stripe |
+
+| Metoda | Endpoint             | Opis                          |
+| ------ | -------------------- | ----------------------------- |
+| POST   | `/payments/checkout` | Utwórz sesję płatności Stripe |
+| GET    | `/payments/status`   | Status subskrypcji            |
+| POST   | `/payments/webhook`  | Webhook Stripe                |
 
 ---
 
