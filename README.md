@@ -7,7 +7,6 @@ Fullstackowy klon Netflixa zbudowany w technologii JavaScript/TypeScript. Projek
 ## 🛠️ Technologie
 
 ### Frontend
-
 - **Next.js 15** — framework React z SSR/CSR
 - **React 19** — biblioteka UI
 - **TypeScript** — typowanie statyczne
@@ -17,7 +16,6 @@ Fullstackowy klon Netflixa zbudowany w technologii JavaScript/TypeScript. Projek
 - **cookies-next** — obsługa cookies (SSR)
 
 ### Backend
-
 - **NestJS** — framework Node.js
 - **Prisma 7** — ORM do bazy danych
 - **PostgreSQL** — relacyjna baza danych
@@ -26,7 +24,6 @@ Fullstackowy klon Netflixa zbudowany w technologii JavaScript/TypeScript. Projek
 - **Stripe** — integracja płatności
 
 ### Infrastruktura
-
 - **Docker** — konteneryzacja bazy danych
 - **Docker Compose** — orkiestracja kontenerów
 
@@ -36,14 +33,15 @@ Fullstackowy klon Netflixa zbudowany w technologii JavaScript/TypeScript. Projek
 
 - 🔐 **Rejestracja i logowanie** — autoryzacja JWT
 - 🎥 **Katalog filmów** — przeglądanie, filtrowanie po gatunkach, wyszukiwanie
-- 🎬 **Odtwarzacz wideo** — własny player z kontrolkami (play/pause, seek, głośność, fullscreen)
+- 🎬 **Odtwarzacz wideo** — własny player z kontrolkami
 - 📋 **My List** — dodawanie filmów do listy ulubionych
 - 📜 **Historia oglądania** — "Continue Watching" z możliwością czyszczenia
 - ✅ **Oznaczanie jako obejrzane** — ręcznie lub automatycznie po zakończeniu filmu
 - 🤖 **Rekomendacje** — algorytm oparty na historii oglądania i gatunkach
 - 💳 **Subskrypcja Premium** — integracja ze Stripe (29.99 PLN/miesiąc)
 - 🔒 **Filmy Premium** — blokada dla użytkowników bez subskrypcji
-- 🔍 **SSR dla SEO** — strona szczegółów renderowana po stronie serwera z meta tagami Open Graph
+- 🔍 **SSR dla SEO** — strona szczegółów z meta tagami Open Graph
+
 
 ---
 
@@ -81,10 +79,9 @@ str-app/
 ## 🚀 Uruchomienie projektu
 
 ### Wymagania
-
 - Node.js v22+
 - Docker Desktop
-- Konto Stripe (tryb sandbox)
+- Konto Stripe (darmowe, tryb sandbox) — https://stripe.com
 
 ### 1. Klonowanie repozytorium
 
@@ -99,23 +96,43 @@ cd str-app
 docker-compose up -d
 ```
 
-### 3. Konfiguracja backendu
+
+### 3. Konfiguracja Stripe (wymagane!)
+
+Stripe to serwis płatności — każdy użytkownik musi mieć własne konto:
+
+1. Załóż darmowe konto na https://stripe.com
+2. Wybierz **Recurring payments** → **Go to sandbox**
+3. Wejdź w **Developers → API keys** i skopiuj **Secret key** (`sk_test_...`)
+4. Wejdź w **Product catalog → Add product**:
+   - Name: `Netflix Clone Premium`
+   - Amount: `29.99 PLN`
+   - Billing: `Monthly`
+   - Kliknij **Add product** i skopiuj **Price ID** (`price_...`)
+5. Pobierz Stripe CLI ze https://stripe.com/docs/stripe-cli (zakładka Windows)
+6. Uruchom: `stripe login` a następnie:
+   ```bash
+   stripe listen --forward-to http://localhost:3001/payments/webhook
+   ```
+7. Skopiuj **Webhook signing secret** (`whsec_...`)
+
+### 4. Konfiguracja backendu
 
 ```bash
 cd backend
 ```
 
-Utwórz plik `.env`:
+Utwórz plik `.env` z następującą zawartością:
 
 ```env
 DATABASE_URL="postgresql://netflix:netflix@localhost:5432/netflix_db?schema=public"
-JWT_SECRET="twoj-sekret-jwt"
+JWT_SECRET="twoj-własny-sekret-jwt-min-32-znaki"
 JWT_EXPIRES_IN="7d"
 PORT=3001
 NODE_ENV=development
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_ID=price_...
+STRIPE_SECRET_KEY=sk_test_...         # Secret key z Stripe Dashboard
+STRIPE_WEBHOOK_SECRET=whsec_...       # Webhook secret z Stripe CLI
+STRIPE_PRICE_ID=price_...             # Price ID z Product catalog
 ```
 
 ```bash
@@ -125,7 +142,7 @@ npx prisma generate
 npm run start:dev
 ```
 
-### 4. Konfiguracja frontendu
+### 5. Konfiguracja frontendu
 
 ```bash
 cd frontend
@@ -142,91 +159,81 @@ npm install
 npm run dev
 ```
 
-### 5. Stripe webhooks (do testowania płatności)
 
-```bash
-stripe listen --forward-to http://localhost:3001/payments/webhook
-```
+### Adresy po uruchomieniu
 
-### Adresy
-
-| Serwis        | Adres                 |
-| ------------- | --------------------- |
-| Frontend      | http://localhost:3000 |
-| Backend API   | http://localhost:3001 |
-| Baza danych   | localhost:5432        |
+| Serwis | Adres |
+|--------|-------|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:3001 |
+| Baza danych | localhost:5432 |
 | Prisma Studio | http://localhost:5555 |
 
 ---
 
 ## 🗄️ Schemat bazy danych
 
-| Tabela          | Opis                                   |
-| --------------- | -------------------------------------- |
-| `users`         | Użytkownicy z danymi subskrypcji       |
-| `movies`        | Filmy z flagą `isPremium`              |
-| `watchlist`     | Lista ulubionych filmów                |
+| Tabela | Opis |
+|--------|------|
+| `users` | Użytkownicy z danymi subskrypcji |
+| `movies` | Filmy z flagą `isPremium` |
+| `watchlist` | Lista ulubionych filmów |
 | `watch_history` | Historia oglądania z flagą `completed` |
 
 ---
 
 ## 💳 Testowanie płatności
 
-Karta testowa Stripe:
-
+Po konfiguracji Stripe użyj karty testowej:
 - **Numer:** `4242 4242 4242 4242`
 - **Data:** dowolna przyszła (np. `12/28`)
 - **CVC:** dowolne 3 cyfry (np. `123`)
+- **Imię/adres:** cokolwiek
 
 ---
 
 ## 📡 API Endpoints
 
 ### Auth
-
-| Metoda | Endpoint         | Opis               |
-| ------ | ---------------- | ------------------ |
-| POST   | `/auth/register` | Rejestracja        |
-| POST   | `/auth/login`    | Logowanie          |
-| GET    | `/auth/me`       | Profil użytkownika |
+| Metoda | Endpoint | Opis |
+|--------|----------|------|
+| POST | `/auth/register` | Rejestracja |
+| POST | `/auth/login` | Logowanie |
+| GET | `/auth/me` | Profil użytkownika |
 
 ### Movies
-
-| Metoda | Endpoint                  | Opis            |
-| ------ | ------------------------- | --------------- |
-| GET    | `/movies`                 | Lista filmów    |
-| GET    | `/movies/:id`             | Szczegóły filmu |
-| GET    | `/movies/recommendations` | Rekomendacje    |
-| GET    | `/movies/seed`            | Seedowanie bazy |
+| Metoda | Endpoint | Opis |
+|--------|----------|------|
+| GET | `/movies` | Lista filmów |
+| GET | `/movies/:id` | Szczegóły filmu |
+| GET | `/movies/recommendations` | Rekomendacje |
+| GET | `/movies/seed` | Seedowanie przykładowych filmów |
 
 ### Watchlist
-
-| Metoda | Endpoint              | Opis          |
-| ------ | --------------------- | ------------- |
-| GET    | `/watchlist`          | Pobierz listę |
-| POST   | `/watchlist`          | Dodaj film    |
-| DELETE | `/watchlist/:movieId` | Usuń film     |
+| Metoda | Endpoint | Opis |
+|--------|----------|------|
+| GET | `/watchlist` | Pobierz listę |
+| POST | `/watchlist` | Dodaj film |
+| DELETE | `/watchlist/:movieId` | Usuń film |
 
 ### History
-
-| Metoda | Endpoint                     | Opis                  |
-| ------ | ---------------------------- | --------------------- |
-| GET    | `/history`                   | Historia oglądania    |
-| GET    | `/history/completed`         | Obejrzane filmy       |
-| POST   | `/history`                   | Dodaj do historii     |
-| PATCH  | `/history/:movieId/complete` | Oznacz jako obejrzany |
-| DELETE | `/history`                   | Wyczyść historię      |
+| Metoda | Endpoint | Opis |
+|--------|----------|------|
+| GET | `/history` | Historia oglądania |
+| GET | `/history/completed` | Obejrzane filmy |
+| POST | `/history` | Dodaj do historii |
+| PATCH | `/history/:movieId/complete` | Oznacz jako obejrzany |
+| DELETE | `/history` | Wyczyść historię |
 
 ### Payments
-
-| Metoda | Endpoint             | Opis                   |
-| ------ | -------------------- | ---------------------- |
-| POST   | `/payments/checkout` | Utwórz sesję płatności |
-| GET    | `/payments/status`   | Status subskrypcji     |
-| POST   | `/payments/webhook`  | Webhook Stripe         |
+| Metoda | Endpoint | Opis |
+|--------|----------|------|
+| POST | `/payments/checkout` | Utwórz sesję płatności Stripe |
+| GET | `/payments/status` | Status subskrypcji |
+| POST | `/payments/webhook` | Webhook Stripe |
 
 ---
 
 ## 👨‍💻 Autor
 
-Bartosz Jędrychowski
+Projekt wykonany jako zadanie szkolne nr 7 — Klon Netflix w JavaScript.
