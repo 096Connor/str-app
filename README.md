@@ -42,7 +42,6 @@ Fullstackowy klon Netflixa zbudowany w technologii JavaScript/TypeScript. Projek
 - 🔒 **Filmy Premium** — blokada dla użytkowników bez subskrypcji
 - 🔍 **SSR dla SEO** — strona szczegółów z meta tagami Open Graph
 
-
 ---
 
 ## 📁 Struktura projektu
@@ -81,7 +80,7 @@ str-app/
 ### Wymagania
 - Node.js v22+
 - Docker Desktop
-- Konto Stripe (darmowe, tryb sandbox) — https://stripe.com
+- Stripe CLI — https://stripe.com/docs/stripe-cli (zakładka Windows)
 
 ### 1. Klonowanie repozytorium
 
@@ -96,44 +95,26 @@ cd str-app
 docker-compose up -d
 ```
 
-
-### 3. Konfiguracja Stripe (wymagane!)
-
-Stripe to serwis płatności — każdy użytkownik musi mieć własne konto:
-
-1. Załóż darmowe konto na https://stripe.com
-2. Wybierz **Recurring payments** → **Go to sandbox**
-3. Wejdź w **Developers → API keys** i skopiuj **Secret key** (`sk_test_...`)
-4. Wejdź w **Product catalog → Add product**:
-   - Name: `Netflix Clone Premium`
-   - Amount: `29.99 PLN`
-   - Billing: `Monthly`
-   - Kliknij **Add product** i skopiuj **Price ID** (`price_...`)
-5. Pobierz Stripe CLI ze https://stripe.com/docs/stripe-cli (zakładka Windows)
-6. Uruchom: `stripe login` a następnie:
-   ```bash
-   stripe listen --forward-to http://localhost:3001/payments/webhook
-   ```
-7. Skopiuj **Webhook signing secret** (`whsec_...`)
-
-### 4. Konfiguracja backendu
+### 3. Konfiguracja backendu
 
 ```bash
 cd backend
 ```
 
-Utwórz plik `.env` z następującą zawartością:
+Utwórz plik `backend/.env` z następującą zawartością:
 
 ```env
 DATABASE_URL="postgresql://netflix:netflix@localhost:5432/netflix_db?schema=public"
-JWT_SECRET="twoj-własny-sekret-jwt-min-32-znaki"
+JWT_SECRET="your-super-secret-jwt-key-change-in-production"
 JWT_EXPIRES_IN="7d"
 PORT=3001
 NODE_ENV=development
-STRIPE_SECRET_KEY=sk_test_...         # Secret key z Stripe Dashboard
-STRIPE_WEBHOOK_SECRET=whsec_...       # Webhook secret z Stripe CLI
-STRIPE_PRICE_ID=price_...             # Price ID z Product catalog
+STRIPE_SECRET_KEY=sk_test_51TLSOEB63vT3f0zcHCELCoL4uDygXsfqyJBm2C5z8IEoih77D5bVAZ84l8voDRWY85ZBEuHijp1pvSpYs7Ymlhjs004FRaxbg4
+STRIPE_WEBHOOK_SECRET=whsec_WYGENERUJ_WŁASNY_PATRZ_NIŻEJ
+STRIPE_PRICE_ID=price_1TLSnVB63vT3f0zcMZnq4byO
 ```
+
+> ⚠️ `STRIPE_WEBHOOK_SECRET` musisz wygenerować sam — patrz krok 5.
 
 ```bash
 npm install
@@ -142,13 +123,13 @@ npx prisma generate
 npm run start:dev
 ```
 
-### 5. Konfiguracja frontendu
+### 4. Konfiguracja frontendu
 
 ```bash
 cd frontend
 ```
 
-Utwórz plik `.env.local`:
+Utwórz plik `frontend/.env.local`:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3001
@@ -159,6 +140,18 @@ npm install
 npm run dev
 ```
 
+### 5. Uruchomienie webhooków Stripe
+
+Webhooks są potrzebne do aktywacji subskrypcji po płatności.
+
+1. Pobierz Stripe CLI ze https://stripe.com/docs/stripe-cli (zakładka Windows)
+2. Wypakuj i uruchom w nowym terminalu:
+```bash
+stripe login
+stripe listen --forward-to http://localhost:3001/payments/webhook
+```
+3. Skopiuj wyświetlony `whsec_...` i wklej do `backend/.env` jako `STRIPE_WEBHOOK_SECRET`
+4. Zrestartuj backend
 
 ### Adresy po uruchomieniu
 
@@ -167,7 +160,16 @@ npm run dev
 | Frontend | http://localhost:3000 |
 | Backend API | http://localhost:3001 |
 | Baza danych | localhost:5432 |
-| Prisma Studio | http://localhost:5555 |
+
+---
+
+## 💳 Testowanie płatności
+
+Użyj karty testowej Stripe (nie pobiera prawdziwych pieniędzy):
+- **Numer:** `4242 4242 4242 4242`
+- **Data:** dowolna przyszła (np. `12/28`)
+- **CVC:** dowolne 3 cyfry (np. `123`)
+- **Imię/adres:** cokolwiek
 
 ---
 
@@ -179,16 +181,6 @@ npm run dev
 | `movies` | Filmy z flagą `isPremium` |
 | `watchlist` | Lista ulubionych filmów |
 | `watch_history` | Historia oglądania z flagą `completed` |
-
----
-
-## 💳 Testowanie płatności
-
-Po konfiguracji Stripe użyj karty testowej:
-- **Numer:** `4242 4242 4242 4242`
-- **Data:** dowolna przyszła (np. `12/28`)
-- **CVC:** dowolne 3 cyfry (np. `123`)
-- **Imię/adres:** cokolwiek
 
 ---
 
