@@ -5,6 +5,9 @@ import { MoviesModule } from './movies/movies.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { WatchlistModule } from './watchlist/watchlist.module';
+import { HistoryModule } from './history/history.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -14,6 +17,9 @@ import { AppService } from './app.service';
     PrismaModule,
     AuthModule,
     MoviesModule,
+    WatchlistModule,
+    HistoryModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

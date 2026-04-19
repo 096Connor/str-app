@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { MoviesService } from './movies.service';
 import { CreateMovieDto, UpdateMovieDto } from './dto';
@@ -32,6 +33,12 @@ export class MoviesController {
   @UseGuards(JwtAuthGuard)
   seed() {
     return this.moviesService.seedMovies();
+  }
+
+  @Get('recommendations')
+  @UseGuards(JwtAuthGuard)
+  getRecommendations(@Request() req: { user: { sub: string } }) {
+    return this.moviesService.getRecommendations(req.user.sub);
   }
 
   @Get(':id')

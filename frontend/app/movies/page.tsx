@@ -1,54 +1,61 @@
-// app/movies/page.tsx
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { moviesAPI } from '@/lib/api';
-import { removeToken, isAuthenticated } from '@/lib/auth';
-import { Movie } from '@/types/movie';
-import MovieCard from '@/components/MovieCard';
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { moviesAPI, historyAPI, paymentsAPI } from "@/lib/api";
+import { removeToken, isAuthenticated } from "@/lib/auth";
+import { Movie } from "@/types/movie";
+import MovieCard from "@/components/MovieCard";
 
 export default function MoviesPage() {
   const router = useRouter();
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState('');
+  const [search, setSearch] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState("");
   const [seeding, setSeeding] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/login');
-      return;
-    }
-    fetchMovies();
-  }, [router, selectedGenre]);
+    setMounted(true);
+    if (!isAuthenticated()) router.push("/login");
+  }, [router]);
 
-  const fetchMovies = async () => {
-    setLoading(true);
-    try {
-      const data = await moviesAPI.getAll(selectedGenre, search);
-      setMovies(data);
-    } catch (error) {
-      console.error('Failed to fetch movies', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: movies = [],
+    isLoading,
+    refetch: refetchMovies
+  } = useQuery({
+    queryKey: ["movies", selectedGenre, search],
+    queryFn: () => moviesAPI.getAll(selectedGenre, search),
+    enabled: isAuthenticated()
+  });
+
+  const { data: completedData = [] } = useQuery({
+    queryKey: ["completed"],
+    queryFn: () => historyAPI.getCompleted(),
+    enabled: isAuthenticated()
+  });
+
+  const completedIds = new Set(completedData.map((item: any) => item.movie.id));
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchMovies();
+    refetchMovies();
   };
+  const { data: subscription } = useQuery({
+    queryKey: ["subscription"],
+    queryFn: () => paymentsAPI.getStatus(),
+    enabled: mounted && isAuthenticated()
+  });
 
   const handleSeed = async () => {
     setSeeding(true);
     try {
       await moviesAPI.seed();
-      fetchMovies();
+      refetchMovies();
     } catch (error) {
-      console.error('Failed to seed movies', error);
+      console.error("Failed to seed movies", error);
     } finally {
       setSeeding(false);
     }
@@ -56,14 +63,13 @@ export default function MoviesPage() {
 
   const handleLogout = () => {
     removeToken();
-    router.push('/login');
+    router.push("/login");
   };
 
-  const genres = ['Action', 'Drama', 'Crime', 'Sci-Fi', 'Romance', 'Adventure', 'Thriller'];
+  const genres = ["Action", "Drama", "Crime", "Sci-Fi", "Romance", "Adventure", "Thriller"];
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Navbar */}
       <nav className="bg-black/90 border-b border-gray-800 px-8 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-8">
@@ -79,14 +85,13 @@ export default function MoviesPage() {
               </Link>
             </div>
           </div>
-          
           <div className="flex items-center gap-4">
             <button
               onClick={handleSeed}
               disabled={seeding}
               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition text-sm disabled:opacity-50"
             >
-              {seeding ? 'Seeding...' : 'Seed Movies'}
+              {seeding ? "Seeding..." : "Seed Movies"}
             </button>
             <button
               onClick={handleLogout}
@@ -98,9 +103,7 @@ export default function MoviesPage() {
         </div>
       </nav>
 
-      {/* Content */}
       <div className="max-w-7xl mx-auto px-8 py-8">
-        {/* Search and Filters */}
         <div className="mb-8">
           <form onSubmit={handleSearch} className="flex gap-4 mb-4">
             <input
@@ -118,15 +121,10 @@ export default function MoviesPage() {
             </button>
           </form>
 
-          {/* Genre filters */}
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => setSelectedGenre('')}
-              className={`px-4 py-2 rounded transition ${
-                selectedGenre === ''
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
+              onClick={() => setSelectedGenre("")}
+              className={`px-4 py-2 rounded transition ${selectedGenre === "" ? "bg-red-600 text-white" : "bg-gray-800 text-gray-300 hover:bg-gray-700"}`}
             >
               All
             </button>
@@ -134,11 +132,7 @@ export default function MoviesPage() {
               <button
                 key={genre}
                 onClick={() => setSelectedGenre(genre)}
-                className={`px-4 py-2 rounded transition ${
-                  selectedGenre === genre
-                    ? 'bg-red-600 text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
+                className={`px-4 py-2 rounded transition ${selectedGenre === genre ? "bg-red-600 text-white" : "bg-gray-800 text-gray-300 hover:bg-gray-700"}`}
               >
                 {genre}
               </button>
@@ -146,8 +140,7 @@ export default function MoviesPage() {
           </div>
         </div>
 
-        {/* Movies Grid */}
-        {loading ? (
+        {isLoading ? (
           <div className="text-white text-center py-20">Loading movies...</div>
         ) : movies.length === 0 ? (
           <div className="text-center py-20">
@@ -162,11 +155,16 @@ export default function MoviesPage() {
         ) : (
           <>
             <h2 className="text-white text-2xl font-semibold mb-6">
-              {selectedGenre ? `${selectedGenre} Movies` : 'All Movies'} ({movies.length})
+              {selectedGenre ? `${selectedGenre} Movies` : "All Movies"} ({movies.length})
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {movies.map((movie) => (
-                <MovieCard key={movie.id} movie={movie} />
+              {movies.map((movie: Movie) => (
+                <MovieCard
+                  key={movie.id}
+                  movie={movie}
+                  isCompleted={completedIds.has(movie.id)}
+                  isSubscribed={subscription?.isSubscribed || false}
+                />
               ))}
             </div>
           </>

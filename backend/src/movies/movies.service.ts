@@ -15,14 +15,10 @@ export class MoviesService {
   async findAll(genre?: string, search?: string) {
     const where: any = {};
 
-    // Filtrowanie po gatunku
     if (genre) {
-      where.genre = {
-        has: genre,
-      };
+      where.genre = { has: genre };
     }
 
-    // Wyszukiwanie po tytule
     if (search) {
       where.title = {
         contains: search,
@@ -32,9 +28,7 @@ export class MoviesService {
 
     return this.prisma.movie.findMany({
       where,
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -51,9 +45,7 @@ export class MoviesService {
   }
 
   async update(id: string, updateMovieDto: UpdateMovieDto) {
-    // Sprawdź czy film istnieje
     await this.findOne(id);
-
     return this.prisma.movie.update({
       where: { id },
       data: updateMovieDto,
@@ -61,15 +53,12 @@ export class MoviesService {
   }
 
   async remove(id: string) {
-    // Sprawdź czy film istnieje
     await this.findOne(id);
-
     return this.prisma.movie.delete({
       where: { id },
     });
   }
 
-  // Pomocnicza funkcja do seedowania danych
   async seedMovies() {
     const movies = [
       {
@@ -81,7 +70,7 @@ export class MoviesService {
         genre: ['Drama', 'Crime'],
         thumbnail:
           'https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg',
-        videoUrl: 'https://www.youtube.com/watch?v=6hB3S9bIaco',
+        videoUrl: '/videos/movie1.mp4',
         rating: 9.3,
       },
       {
@@ -93,8 +82,9 @@ export class MoviesService {
         genre: ['Crime', 'Drama'],
         thumbnail:
           'https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg',
-        videoUrl: 'https://www.youtube.com/watch?v=sY1S34973zA',
+        videoUrl: '/videos/movie2.mp4',
         rating: 9.2,
+        isPremium: true,
       },
       {
         title: 'The Dark Knight',
@@ -105,7 +95,7 @@ export class MoviesService {
         genre: ['Action', 'Crime', 'Drama'],
         thumbnail:
           'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
-        videoUrl: 'https://www.youtube.com/watch?v=EXeTwQWrcwY',
+        videoUrl: '/videos/movie3.mp4',
         rating: 9.0,
       },
       {
@@ -117,7 +107,7 @@ export class MoviesService {
         genre: ['Crime', 'Drama'],
         thumbnail:
           'https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg',
-        videoUrl: 'https://www.youtube.com/watch?v=s7EdQ4FqbhY',
+        videoUrl: '/videos/movie4.mp4',
         rating: 8.9,
       },
       {
@@ -129,8 +119,9 @@ export class MoviesService {
         genre: ['Drama', 'Romance'],
         thumbnail:
           'https://image.tmdb.org/t/p/w500/saHP97rTPS5eLmrLQEcANmKrsFl.jpg',
-        videoUrl: 'https://www.youtube.com/watch?v=bLvqoHBptjg',
+        videoUrl: '/videos/movie5.mp4',
         rating: 8.8,
+        isPremium: true,
       },
       {
         title: 'Inception',
@@ -141,7 +132,7 @@ export class MoviesService {
         genre: ['Action', 'Sci-Fi', 'Thriller'],
         thumbnail:
           'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
-        videoUrl: 'https://www.youtube.com/watch?v=YoHD9XEInc0',
+        videoUrl: '/videos/movie6.mp4',
         rating: 8.8,
       },
       {
@@ -153,7 +144,7 @@ export class MoviesService {
         genre: ['Action', 'Sci-Fi'],
         thumbnail:
           'https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg',
-        videoUrl: 'https://www.youtube.com/watch?v=vKQi3bBA1y8',
+        videoUrl: '/videos/movie7.mp4',
         rating: 8.7,
       },
       {
@@ -165,26 +156,64 @@ export class MoviesService {
         genre: ['Adventure', 'Drama', 'Sci-Fi'],
         thumbnail:
           'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
-        videoUrl: 'https://www.youtube.com/watch?v=zSWdZVtXT7E',
+        videoUrl: '/videos/movie8.mp4',
         rating: 8.6,
       },
     ];
 
     let count = 0;
     for (const movie of movies) {
-      // Sprawdź czy film już istnieje
       const existing = await this.prisma.movie.findFirst({
         where: { title: movie.title },
       });
 
       if (!existing) {
-        await this.prisma.movie.create({
-          data: movie,
-        });
+        await this.prisma.movie.create({ data: movie });
         count++;
       }
     }
 
     return { message: `Seeded ${count} new movies`, total: movies.length };
+  }
+  async getRecommendations(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    // Pobierz gatunki z historii oglądania
+    const history = await this.prisma.watchHistory.findMany({
+      where: { userId },
+      include: { movie: true },
+      take: 10,
+    });
+
+    if (history.length === 0) return [];
+
+    // Zbierz wszystkie gatunki z historii
+    const genres = history.flatMap((item) => item.movie.genre);
+    const genreCount = genres.reduce(
+      (acc, genre) => {
+        acc[genre] = (acc[genre] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    // Posortuj gatunki po częstości
+    const topGenres = Object.entries(genreCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([genre]) => genre);
+
+    // ID filmów już oglądanych
+    const watchedIds = history.map((item) => item.movieId);
+
+    // Znajdź filmy z tych gatunków których jeszcze nie oglądał
+    return this.prisma.movie.findMany({
+      where: {
+        id: { notIn: watchedIds },
+        genre: { hasSome: topGenres },
+        ...(user?.isSubscribed ? {} : { isPremium: false }),
+      },
+      orderBy: { rating: 'desc' },
+      take: 10,
+    });
   }
 }
