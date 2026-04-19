@@ -1,9 +1,3 @@
-# 🎬 Netflix Clone
-
-Fullstackowy klon Netflixa zbudowany w technologii JavaScript/TypeScript. Projekt szkolny realizowany w ramach technikum informatycznego.
-
----
-
 ## 🛠️ Technologie
 
 ### Frontend
@@ -237,4 +231,4 @@ Użyj karty testowej Stripe (nie pobiera prawdziwych pieniędzy):
 
 ## 👨‍💻 Autor
 
-Projekt wykonany jako zadanie szkolne nr 7 — Klon Netflix w JavaScript.
+Bartosz Jędrychowski
